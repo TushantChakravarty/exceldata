@@ -88,5 +88,5 @@
         res.sendFile(__dirname + "/index.html");
     });
     app.listen('1000', function(){
-        console.log('running on 3000...');
+        console.log('running on port 1000');
     });
