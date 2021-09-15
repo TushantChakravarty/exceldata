@@ -6,7 +6,8 @@
     var xlsxtojson = require("xlsx-to-json-lc");
     const mongoose=require('mongoose');
     const urll='mongodb://127.0.0.1:27017/excel';
-    mongoose.connect(urll,{
+    const url="mongodb+srv://tushant07:tushant07@cluster0.b6dej.mongodb.net/excel?retryWrites=true&w=majority"
+    mongoose.connect(url,{
         useNewUrlParser:true
     });
     const db=mongoose.connection
