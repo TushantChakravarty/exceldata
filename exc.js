@@ -20,7 +20,7 @@
     })
     var user=mongoose.model("user",nameschema);
     app.use(bodyParser.json());
-    var storage = multer.diskStorage({ //multers disk storage settings
+    var storage = multer.diskStorage({ 
         destination: function (req, file, cb) {
             cb(null, './uploads/')
         },
@@ -29,40 +29,38 @@
             cb(null, file.fieldname + '-' + datetimestamp + '.' + file.originalname.split('.')[file.originalname.split('.').length -1])
         }
     });
-    var upload = multer({ //multer settings
+    var upload = multer({ 
                     storage: storage,
-                    fileFilter : function(req, file, callback) { //file filter
+                    fileFilter : function(req, file, callback) { 
                         if (['xls', 'xlsx'].indexOf(file.originalname.split('.')[file.originalname.split('.').length-1]) === -1) {
                             return callback(new Error('Wrong extension type'));
                         }
                         callback(null, true);
                     }
                 }).single('file');
-    /** API path that will upload the files */
+    
     app.post('/', function(req, res) {
         var exceltojson;
-        upload(req,res,function(err){
+        upload(req,res,async function(err){
             if(err){
                  res.json({error_code:1,err_desc:"file type not allowed"});
                  return;
             }
-            /** Multer gives us file info in req.file object */
+            
             if(!req.file){
                 res.json({error_code:1,err_desc:"No file passed"});
                 return;
             }
-            /** Check the extension of the incoming file and
-             *  use the appropriate module
-             */
+            
             if(req.file.originalname.split('.')[req.file.originalname.split('.').length-1] === 'xlsx'){
-                exceltojson = xlsxtojson;
+                exceltojson =  xlsxtojson;
             } else {
                 exceltojson = xlstojson;
             }
             try {
                 exceltojson({
-                    input: req.file.path,
-                    output: null, //since we don't need output.json
+                    input: await req.file.path,
+                    output: null, 
                     lowerCaseHeaders:true
                 }, function(err,result){
                     if(err) {
@@ -71,13 +69,23 @@
                     //res.json({error_code:0,err_desc:null, data: result});
                     //res.send('file uploaded')
                     console.log(result)
-                    var mydata=new user({
-                        "exceldata":result});
+                     user.findOne({"exceldata":result},function(err,resl){
+                        if(err) console.log(err);
+                        if(resl){
+                             res.json({error_code:1,err_desc:'This data has already been saved', data: null});
+                            
+                            console.log('this data has already been saved');
+                        }else{
+                            var mydata=new user({
+                                "exceldata":result});
+                            
+                             mydata.save()
+                             .then(item=>{
+                                 res.send('item saved to database');
+                             })
+                        }
+                    })
                     
-                     mydata.save()
-                     .then(item=>{
-                         res.send('item saved to database');
-                     })
                    
                 });
             } catch (e){
